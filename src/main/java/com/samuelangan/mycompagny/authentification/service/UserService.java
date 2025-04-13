@@ -111,13 +111,17 @@ public class UserService {
             newUser.setEmail(userDTO.getEmail().toLowerCase());
         }
 
-        // new user is not active
-        newUser.setActivated(false);
-        // new user gets registration key
-        newUser.setActivationKey(RandomUtil.generateActivationKey());
+
+        // ✅ Ajout des rôles dans un seul Set
         Set<Authority> authorities = new HashSet<>();
-        authorityRepository.findById(AuthoritiesConstants.USER).ifPresent(authorities::add);
+        authorityRepository.findById("ROLE_ADMIN")
+                .ifPresent(authorities::add); // ou "ROLE_USER" selon ce que tu veux
+        // authorityRepository.findById("ROLE_USER").ifPresent(authorities::add); // décommente si tu veux aussi le rôle USER
+
         newUser.setAuthorities(authorities);
+        newUser.setActivated(true); // ✅ Activation directe du compte
+        newUser.setActivationKey(RandomUtil.generateActivationKey());
+
         userRepository.save(newUser);
         log.debug("Created Information for User: {}", newUser);
         return newUser;
@@ -131,12 +135,27 @@ public class UserService {
         return SecurityUtils.getCurrentUserLogin().flatMap(userRepository::findOneByLogin);
     }
 
+    public List<User> getAllAdminUsers() {
+        Authority adminAuthority = authorityRepository.findById(AuthoritiesConstants.ADMIN)
+                .orElseThrow(() -> new RuntimeException("Authority not found"));
+        return userRepository.findAllByIdNotNullAndActivatedIsTrueAndAuthoritiesContaining(adminAuthority);
+    }
+
     private boolean removeNonActivatedUser(User existingUser) {
         if (existingUser.isActivated()) {
             return false;
         }
         userRepository.delete(existingUser);
         return true;
+    }
+
+
+    /**
+     * Gets a list of all the authorities.
+     * @return a list of all the authorities.
+     */
+    public List<String> getAuthorities() {
+        return authorityRepository.findAll().stream().map(Authority::getName).collect(Collectors.toList());
     }
 
     public User createUser(AdminUserDTO userDTO) {

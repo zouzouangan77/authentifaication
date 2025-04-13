@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Espace</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+<header>
+    <h1>Mon espace utilisateur</h1>
+    <nav>
+        <a th:href="@{/profil}">Mon profil</a>
+        <a th:href="@{/mes-activites}">Mes activités</a>
+        <a th:href="@{/logout}">Se déconnecter</a>
+    </nav>
+</header>
+
+<main>
+    <section>
+        <h2>Bienvenue</h2>
+        <p th:text="'Bonjour , ravi de vous revoir !'"></p>
+        <p>Accédez à vos fonctionnalités via le menu ci-dessus.</p>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2025 MonApplication - Tous droits réservés</p>
+</footer>
+</body>
+</html>

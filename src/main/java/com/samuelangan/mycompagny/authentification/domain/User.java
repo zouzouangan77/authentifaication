@@ -55,6 +55,7 @@ public class User implements Serializable {
     private String email;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean activated = false;
 
     @Size(max = 20)
@@ -71,16 +72,14 @@ public class User implements Serializable {
     private Instant resetDate;
 
 
-    @JsonIgnore
-    @Builder.Default
-    private Set<Authority> authorities = new HashSet<>();
 
-   /* @JsonIgnore
+   @JsonIgnore
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_authority",
             joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")},
             inverseJoinColumns = {@JoinColumn(name = "authority_name", referencedColumnName = "name")}
     )
-    private Set<Authority> authorities = new HashSet<>();*/
+   @Builder.Default
+    private Set<Authority> authorities = new HashSet<>();
 }

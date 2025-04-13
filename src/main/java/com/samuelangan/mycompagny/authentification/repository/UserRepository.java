@@ -1,5 +1,6 @@
 package com.samuelangan.mycompagny.authentification.repository;
 
+import com.samuelangan.mycompagny.authentification.domain.Authority;
 import com.samuelangan.mycompagny.authentification.domain.User;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -28,7 +29,7 @@ public interface UserRepository extends JpaRepository<User,Long> {
 
     Page<User> findAllByIdNotNullAndActivatedIsTrue(Pageable pageable);
 
-
+    List<User> findAllByIdNotNullAndActivatedIsTrueAndAuthoritiesContaining(Authority authorities);
 
 
 

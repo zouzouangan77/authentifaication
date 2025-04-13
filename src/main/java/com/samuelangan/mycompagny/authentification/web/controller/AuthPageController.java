@@ -22,6 +22,7 @@ public class AuthPageController {
         return "loginTemplate";
     }
 
+
     @GetMapping("/register")
     public String showRegisterForm(Model model) {
         model.addAttribute("userDTO", new AdminUserDTO());
@@ -54,5 +55,10 @@ public class AuthPageController {
             model.addAttribute("message", "Erreur lors de l'inscription : " + e.getMessage());
             return "registerTemplate";
         }
+    }
+
+    @GetMapping("/access-denied")
+    public String accessDenied() {
+        return "accessDenied"; // fichier accessDenied.html dans templates
     }
 }
