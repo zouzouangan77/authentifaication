@@ -33,7 +33,7 @@ public class AdminPageController {
     @PostMapping("/toggle")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public String toggleUserActivation(@RequestParam Long userId) {
-        userService.toggleActivation(userId);
+        //userService.toggleActivation(userId);
         return "redirect:/admin/dashboard";
     }
 }
