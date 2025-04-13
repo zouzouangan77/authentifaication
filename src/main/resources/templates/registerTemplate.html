@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Connexion</title>
+    <title>Inscription</title>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -15,13 +15,13 @@
             height: 100vh;
         }
 
-        .login-container {
+        .register-container {
             background-color: white;
             padding: 2.5rem;
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
             width: 100%;
-            max-width: 400px;
+            max-width: 500px;
         }
 
         h2 {
@@ -36,14 +36,16 @@
         }
 
         label {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
             color: #555;
+            font-weight: 500;
         }
 
         input[type="text"],
+        input[type="email"],
         input[type="password"] {
             padding: 0.75rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
             border: 1px solid #ccc;
             border-radius: 8px;
             font-size: 1rem;
@@ -72,51 +74,54 @@
 
         .message {
             text-align: center;
-            color: red;
+            color: green;
             margin-bottom: 1rem;
         }
 
-        .register-link {
+        .login-link {
             margin-top: 1rem;
             text-align: center;
             font-size: 0.9rem;
         }
 
-        .register-link a {
+        .login-link a {
             color: #4facfe;
             text-decoration: none;
         }
 
-        .register-link a:hover {
+        .login-link a:hover {
             text-decoration: underline;
         }
     </style>
 </head>
 <body>
 
-<div class="login-container">
-    <h2>Connexion</h2>
+<div class="register-container">
+    <h2>Inscription</h2>
 
-    <div th:if="${param.error}" class="message">
-        Identifiants invalides. Veuillez réessayer.
-    </div>
+    <div th:if="${message}" class="message" th:text="${message}"></div>
 
-    <div th:if="${param.logout}" class="message" style="color: green;">
-        Vous vous êtes déconnecté avec succès.
-    </div>
+    <form th:action="@{/register}" th:object="${userDTO}" method="post">
+        <label>Nom d'utilisateur :</label>
+        <input type="text" th:field="*{login}" required/>
 
-    <form th:action="@{/login}" method="post">
-        <label for="username">Nom d'utilisateur :</label>
-        <input type="text" id="username" name="username" required>
+        <label>Prénom :</label>
+        <input type="text" th:field="*{firstName}" />
 
-        <label for="password">Mot de passe :</label>
-        <input type="password" id="password" name="password" required>
+        <label>Nom :</label>
+        <input type="text" th:field="*{lastName}" />
 
-        <button type="submit" class="btn">Se connecter</button>
+        <label>Email :</label>
+        <input type="email" th:field="*{email}" required/>
+
+        <label>Mot de passe :</label>
+        <input type="password" name="password" required/>
+
+        <button type="submit" class="btn">Créer mon compte</button>
     </form>
 
-    <div class="register-link">
-        Pas encore de compte ? <a th:href="@{/register}">Inscrivez-vous ici</a>
+    <div class="login-link">
+        Déjà inscrit ? <a th:href="@{/login}">Connectez-vous ici</a>
     </div>
 </div>
 
