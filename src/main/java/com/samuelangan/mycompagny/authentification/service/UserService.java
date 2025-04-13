@@ -1,38 +1,47 @@
 package com.samuelangan.mycompagny.authentification.service;
 
+import com.samuelangan.mycompagny.authentification.domain.Authority;
 import com.samuelangan.mycompagny.authentification.domain.User;
+import com.samuelangan.mycompagny.authentification.repository.AuthorityRepository;
 import com.samuelangan.mycompagny.authentification.repository.UserRepository;
+import com.samuelangan.mycompagny.authentification.security.AuthoritiesConstants;
+import com.samuelangan.mycompagny.authentification.security.SecurityUtils;
+import com.samuelangan.mycompagny.authentification.service.dto.AdminUserDTO;
 import com.samuelangan.mycompagny.authentification.service.exception.EmailAlreadyUsedException;
 import com.samuelangan.mycompagny.authentification.service.exception.InvalidPasswordException;
 import com.samuelangan.mycompagny.authentification.service.exception.UsernameAlreadyUsedException;
+import com.samuelangan.mycompagny.authentification.utils.RandomUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class UserService {
     private final Logger log = LoggerFactory.getLogger(UserService.class);
     private final UserRepository userRepository;
-
+    private final AuthorityRepository authorityRepository;
     private final PasswordEncoder passwordEncoder;
 
 
     public UserService(
             UserRepository userRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            AuthorityRepository authorityRepository
          ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.authorityRepository = authorityRepository;
 
     }
 
@@ -67,16 +76,16 @@ public class UserService {
                 .findOneByEmailIgnoreCase(mail)
                 .filter(User::isActivated)
                 .map(user -> {
-                    //user.setResetKey(RandomUtil.generateResetKey());
+                    user.setResetKey(RandomUtil.generateResetKey());
                     user.setResetDate(Instant.now());
                     userRepository.save(user);
                     return user;
                 });
     }
 
-    public User registerUser(User user) {
+    public User registerUser(AdminUserDTO userDTO, String password) {
         userRepository
-                .findOneByLogin(user.getLogin().toLowerCase())
+                .findOneByLogin(userDTO.getLogin().toLowerCase())
                 .ifPresent(existingUser -> {
                     boolean removed = removeNonActivatedUser(existingUser);
                     if (!removed) {
@@ -84,7 +93,7 @@ public class UserService {
                     }
                 });
         userRepository
-                .findOneByEmailIgnoreCase(user.getEmail())
+                .findOneByEmailIgnoreCase(userDTO.getEmail())
                 .ifPresent(existingUser -> {
                     boolean removed = removeNonActivatedUser(existingUser);
                     if (!removed) {
@@ -92,24 +101,35 @@ public class UserService {
                     }
                 });
         User newUser = new User();
-        String encryptedPassword = passwordEncoder.encode(user.getPassword());
-        newUser.setLogin(user.getLogin().toLowerCase());
+        String encryptedPassword = passwordEncoder.encode(password);
+        newUser.setLogin(userDTO.getLogin().toLowerCase());
         // new user gets initially a generated password
         newUser.setPassword(encryptedPassword);
-        newUser.setFirstName(user.getFirstName());
-        newUser.setLastName(user.getLastName());
-        if (user.getEmail() != null) {
-            newUser.setEmail(user.getEmail().toLowerCase());
+        newUser.setFirstName(userDTO.getFirstName());
+        newUser.setLastName(userDTO.getLastName());
+        if (userDTO.getEmail() != null) {
+            newUser.setEmail(userDTO.getEmail().toLowerCase());
         }
+
         // new user is not active
         newUser.setActivated(false);
         // new user gets registration key
-        //newUser.setActivationKey(RandomUtil.generateActivationKey());
+        newUser.setActivationKey(RandomUtil.generateActivationKey());
+        Set<Authority> authorities = new HashSet<>();
+        authorityRepository.findById(AuthoritiesConstants.USER).ifPresent(authorities::add);
+        newUser.setAuthorities(authorities);
         userRepository.save(newUser);
         log.debug("Created Information for User: {}", newUser);
         return newUser;
     }
 
+    public Optional<User> getUserWithAuthoritiesByLogin(String login) {
+        return userRepository.findOneByLogin(login);
+    }
+
+    public Optional<User> getUserWithAuthorities() {
+        return SecurityUtils.getCurrentUserLogin().flatMap(userRepository::findOneByLogin);
+    }
 
     private boolean removeNonActivatedUser(User existingUser) {
         if (existingUser.isActivated()) {
@@ -117,6 +137,70 @@ public class UserService {
         }
         userRepository.delete(existingUser);
         return true;
+    }
+
+    public User createUser(AdminUserDTO userDTO) {
+        User user = new User();
+        user.setLogin(userDTO.getLogin().toLowerCase());
+        user.setFirstName(userDTO.getFirstName());
+        user.setLastName(userDTO.getLastName());
+        if (userDTO.getEmail() != null) {
+            user.setEmail(userDTO.getEmail().toLowerCase());
+        }
+
+        String encryptedPassword = passwordEncoder.encode(RandomUtil.generatePassword());
+        user.setPassword(encryptedPassword);
+        user.setResetKey(RandomUtil.generateResetKey());
+        user.setResetDate(Instant.now());
+        user.setActivated(true);
+        if (userDTO.getAuthorities() != null) {
+            Set<Authority> authorities = userDTO
+                    .getAuthorities()
+                    .stream()
+                    .map(authorityRepository::findById)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toSet());
+            user.setAuthorities(authorities);
+        }
+        userRepository.save(user);
+        log.debug("Created Information for User: {}", user);
+        return user;
+    }
+
+    /**
+     * Update all information for a specific user, and return the modified user.
+     *
+     * @param userDTO user to update.
+     * @return updated user.
+     */
+    public Optional<AdminUserDTO> updateUser(AdminUserDTO userDTO) {
+        return Optional
+                .of(userRepository.findById(userDTO.getId()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(user -> {
+                    user.setLogin(userDTO.getLogin().toLowerCase());
+                    user.setFirstName(userDTO.getFirstName());
+                    user.setLastName(userDTO.getLastName());
+                    if (userDTO.getEmail() != null) {
+                        user.setEmail(userDTO.getEmail().toLowerCase());
+                    }
+                    user.setActivated(userDTO.isActivated());
+                    Set<Authority> managedAuthorities = user.getAuthorities();
+                    managedAuthorities.clear();
+                    userDTO
+                            .getAuthorities()
+                            .stream()
+                            .map(authorityRepository::findById)
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .forEach(managedAuthorities::add);
+                    userRepository.save(user);
+                    log.debug("Changed Information for User: {}", user);
+                    return user;
+                })
+                .map(AdminUserDTO::new);
     }
 
     public void deleteUser(String login) {
@@ -127,10 +211,6 @@ public class UserService {
                     log.debug("Deleted User: {}", user);
                 });
     }
-
-
-
-
 
 
 }

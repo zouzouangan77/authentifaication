@@ -70,4 +70,17 @@ public class User implements Serializable {
     @Column(name = "reset_date")
     private Instant resetDate;
 
+
+    @JsonIgnore
+    @Builder.Default
+    private Set<Authority> authorities = new HashSet<>();
+
+   /* @JsonIgnore
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_authority",
+            joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")},
+            inverseJoinColumns = {@JoinColumn(name = "authority_name", referencedColumnName = "name")}
+    )
+    private Set<Authority> authorities = new HashSet<>();*/
 }

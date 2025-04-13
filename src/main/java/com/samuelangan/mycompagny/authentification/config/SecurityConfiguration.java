@@ -2,15 +2,26 @@ package com.samuelangan.mycompagny.authentification.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+
+
+@EnableWebSecurity
 @Configuration
-public class SecurityConfig {
+public class SecurityConfiguration {
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();  // This is the most commonly used password encoder.
+        return new BCryptPasswordEncoder();
     }
-}
 
+
+}
