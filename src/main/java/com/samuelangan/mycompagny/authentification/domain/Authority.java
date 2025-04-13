@@ -1,25 +1,29 @@
 package com.samuelangan.mycompagny.authentification.domain;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.springframework.data.annotation.Id;
 
 import java.io.Serial;
 import java.io.Serializable;
 
-import jakarta.validation.constraints.*;
-import lombok.*;
+@Entity
+@Table(name = "authority")
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Data
 @Getter
 public class Authority implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
+    @Id
     @NotNull
     @Size(max = 50)
-    @Id
     private String name;
 }
