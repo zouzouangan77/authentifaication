@@ -1,5 +1,6 @@
 package com.samuelangan.mycompagny.authentification.config;
 
+import com.samuelangan.mycompagny.authentification.security.AuthoritiesConstants;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,10 +24,10 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         for (GrantedAuthority authority : authorities) {
             String role = authority.getAuthority();
-            if (role.equals("ROLE_ADMIN")) {
+            if (role.equals(AuthoritiesConstants.ADMIN)) {
                 response.sendRedirect("/admin/dashboard");
                 return;
-            } else if (role.equals("ROLE_USER")) {
+            } else if (role.equals(AuthoritiesConstants.USER)) {
                 response.sendRedirect("/user/dashboard");
                 return;
             }

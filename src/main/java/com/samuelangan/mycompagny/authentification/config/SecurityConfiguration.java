@@ -62,6 +62,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         http
+                .securityMatcher("/api/**", "/management/**", "/websocket/**")
                 .csrf(csrf -> csrf.disable())
                 .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
@@ -83,28 +84,22 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/websocket/**").permitAll()
-                        .requestMatchers("/management/health").permitAll()
-                        .requestMatchers("/management/health/**").permitAll()
-                        .requestMatchers("/management/info").permitAll()
-                        .requestMatchers("/management/prometheus").permitAll()
+                        .requestMatchers("/management/health", "/management/health/**", "/management/info", "/management/prometheus").permitAll()
                         .requestMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
-                        .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults());
         return http.build();
     }
 
 
-
-
-
     @Bean
-    public SecurityFilterChain mvcSecurityFilterChain(HttpSecurity http,
-                                           CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler) throws Exception {
+    public SecurityFilterChain mvcSecurityFilterChain(
+            HttpSecurity http,
+            CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler) throws Exception {
+
         http
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/api/**") // Autorise les requêtes REST sans CSRF token
-                )
+                .securityMatcher("/**") // Ne matchera QUE ce qui n’est pas déjà pris par `apiSecurityFilterChain`
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/register", "/login", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)
@@ -119,10 +114,7 @@ public class SecurityConfiguration {
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login?logout").permitAll()
                 )
-                // Ajout du filtre JWT pour les appels API
                 .addFilterBefore(new JWTFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class)
-
-                // Pas de session pour les appels REST
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
@@ -131,6 +123,7 @@ public class SecurityConfiguration {
 
         return http.build();
     }
+
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http, DaoAuthenticationProvider authProvider) throws Exception {
