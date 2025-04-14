@@ -1,0 +1,14 @@
+Application complète de gestion des utilisateurs avec reset password, email de vérification, etc.
+🧩 Problématique :
+Comment construire un système complet d’authentification moderne comme sur n’importe quel site sérieux ?
+💡 Objectif :
+Un projet full-stack de gestion d’identité avec les fonctionnalités suivantes :
+✅ Fonctionnalités :
+•	Inscription + confirmation par email (token unique avec expiration)
+•	Connexion sécurisée (JWT) pour API REST
+•	Réinitialisation de mot de passe (via token envoyé par email)
+•	Mise à jour du mot de passe actuel
+•	Désactivation du compte
+•	API sécurisée avec tests
+•	Ajout une UI simple avec Thymeleaf
+•	un système complet d’identification avec reset password pour API
