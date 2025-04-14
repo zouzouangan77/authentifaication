@@ -49,6 +49,7 @@ public class AdminUserDTO implements Serializable {
 
     private Set<String> authorities;
 
+
     public AdminUserDTO(User user) {
         this.id = user.getId();
         this.login = user.getLogin();

@@ -50,14 +50,18 @@
                     <span th:if="${!user.activated}" class="badge bg-secondary">Désactivé</span>
                 </td>
                 <td>
-                    <form th:action="@{/admin/users/toggle}" method="post" class="d-inline">
-                        <input type="hidden" th:name="userId" th:value="${user.id}"/>
-                        <button type="submit" th:text="${user.activated ? 'Désactiver' : 'Activer'}"
-                                th:class="${user.activated ? 'btn btn-danger btn-sm' : 'btn btn-success btn-sm'}">
-                            Activer
-                        </button>
-                    </form>
+                    <div th:if="${!user.activated}">
+                        <a th:href="@{/admin/activate(key=${user.activationKey})}"
+                           class="btn btn-success btn-sm">Activer</a>
+                    </div>
+                    <div th:if="${user.activated}">
+                        <form th:action="@{/admin/toggle}" method="post" class="d-inline">
+                            <input type="hidden" th:name="userId" th:value="${user.id}"/>
+                            <button type="submit" class="btn btn-danger btn-sm">Désactiver</button>
+                        </form>
+                    </div>
                 </td>
+
             </tr>
             </tbody>
         </table>

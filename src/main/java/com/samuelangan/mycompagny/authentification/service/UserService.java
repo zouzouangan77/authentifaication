@@ -111,17 +111,30 @@ public class UserService {
             newUser.setEmail(userDTO.getEmail().toLowerCase());
         }
 
-
-        // ✅ Ajout des rôles dans un seul Set
+      /*
+        //  Ajout des rôles dans un seul Set
         Set<Authority> authorities = new HashSet<>();
         authorityRepository.findById("ROLE_ADMIN")
                 .ifPresent(authorities::add); // ou "ROLE_USER" selon ce que tu veux
         // authorityRepository.findById("ROLE_USER").ifPresent(authorities::add); // décommente si tu veux aussi le rôle USER
 
         newUser.setAuthorities(authorities);
-        newUser.setActivated(true); // ✅ Activation directe du compte
+        newUser.setActivated(true); // Activation directe du compte
         newUser.setActivationKey(RandomUtil.generateActivationKey());
 
+        userRepository.save(newUser);
+        log.debug("Created Information for User: {}", newUser);
+        return newUser;*/
+
+
+        // new user is not active
+        newUser.setActivated(false);
+        // new user gets registration key
+        //newUser.setActivationKey(RandomUtil.generateActivationKey());
+        newUser.setActivationKey(RandomUtil.generateActivationKey());
+        Set<Authority> authorities = new HashSet<>();
+        authorityRepository.findById(AuthoritiesConstants.USER).ifPresent(authorities::add);
+        newUser.setAuthorities(authorities);
         userRepository.save(newUser);
         log.debug("Created Information for User: {}", newUser);
         return newUser;
@@ -139,6 +152,9 @@ public class UserService {
         Authority adminAuthority = authorityRepository.findById(AuthoritiesConstants.ADMIN)
                 .orElseThrow(() -> new RuntimeException("Authority not found"));
         return userRepository.findAllByIdNotNullAndActivatedIsTrueAndAuthoritiesContaining(adminAuthority);
+    }
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
     private boolean removeNonActivatedUser(User existingUser) {
@@ -229,6 +245,44 @@ public class UserService {
                     userRepository.delete(user);
                     log.debug("Deleted User: {}", user);
                 });
+    }
+
+    public void changePassword(String currentClearTextPassword, String newPassword) {
+        SecurityUtils
+                .getCurrentUserLogin()
+                .flatMap(userRepository::findOneByLogin)
+                .ifPresent(user -> {
+                    String currentEncryptedPassword = user.getPassword();
+                    if (!passwordEncoder.matches(currentClearTextPassword, currentEncryptedPassword)) {
+                        throw new InvalidPasswordException();
+                    }
+                    String encryptedPassword = passwordEncoder.encode(newPassword);
+                    user.setPassword(encryptedPassword);
+                    userRepository.save(user);
+                    log.debug("Changed password for User: {}", user);
+                });
+    }
+
+    public Page<AdminUserDTO> getAllManagedUsers(Pageable pageable) {
+        return userRepository.findAll(pageable).map(AdminUserDTO::new);
+    }
+
+  /*  public List<User> getAllAdminUsers() {
+        return userRepository.findAllByIdNotNullAndActivatedIsTrueAndAuthoritiesContains(
+                new HashSet<Authority>(Arrays.asList(Authority.builder().name(AuthoritiesConstants.ADMIN).build()))
+        );
+    }*/
+
+
+    public boolean toggleActivation(Long userId) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            user.setActivated(!user.isActivated());
+            userRepository.save(user);
+            return true;
+        }
+        return false;
     }
 
 
